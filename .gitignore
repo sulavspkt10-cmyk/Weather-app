@@ -1,0 +1,10 @@
+# Build output
+target/
+
+# Sensitive config (credentials & API keys)
+src/main/resources/config.properties
+
+# IDE config
+.vscode/
+.idea/
+*.iml

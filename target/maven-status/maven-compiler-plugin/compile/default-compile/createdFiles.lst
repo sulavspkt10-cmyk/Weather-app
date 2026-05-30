@@ -1,8 +1,0 @@
-com\weatherapp\services\AuthService.class
-com\weatherapp\config\MongoDBConnection.class
-com\weatherapp\models\User.class
-com\weatherapp\models\Admin.class
-com\weatherapp\services\UserService.class
-com\weatherapp\App.class
-com\weatherapp\services\WeatherService.class
-com\weatherapp\middleware\AuthMiddleware.class
