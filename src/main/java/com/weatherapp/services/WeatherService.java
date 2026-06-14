@@ -3,6 +3,8 @@ package com.weatherapp.services;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 import java.util.Scanner;
 
@@ -26,17 +28,23 @@ public class WeatherService {
         }
     }
 
-    // Get weather for a city
     public JsonObject getWeather(String city) {
         try {
+            String encodedCity = URLEncoder.encode(city, StandardCharsets.UTF_8);
             String urlString = "https://api.openweathermap.org/data/2.5/weather?q="
-                    + city + "&appid=" + API_KEY + "&units=metric";
+                    + encodedCity + "&appid=" + API_KEY + "&units=metric";
 
             URL url = new URL(urlString);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
+            conn.setConnectTimeout(5000);
+            conn.setReadTimeout(5000);
 
-            // Read response
+            int status = conn.getResponseCode();
+            if (status != 200) {
+                return null;
+            }
+
             Scanner scanner = new Scanner(conn.getInputStream());
             StringBuilder response = new StringBuilder();
             while (scanner.hasNext()) {
@@ -44,12 +52,10 @@ public class WeatherService {
             }
             scanner.close();
 
-            // Parse JSON response
             JsonObject jsonResponse = JsonParser
                     .parseString(response.toString())
                     .getAsJsonObject();
 
-            // Extract what we need
             JsonObject result = new JsonObject();
             result.addProperty("city", city);
             result.addProperty("temperature",
@@ -66,12 +72,10 @@ public class WeatherService {
                     jsonResponse.getAsJsonObject("main")
                             .get("feels_like").getAsDouble());
 
-            System.out.println("✅ Weather fetched for: " + city);
             return result;
 
         } catch (Exception e) {
-            System.out.println("❌ Could not get weather for: " + city);
-            e.printStackTrace();
+            System.err.println("Could not fetch weather for city: " + city);
             return null;
         }
     }
