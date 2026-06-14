@@ -74,7 +74,7 @@
             document.getElementById('errorBox').style.display = 'none';
 
             try {
-                const response = await fetch(`/weather?city=${city}`);
+                const response = await fetch(`/weather?city=${encodeURIComponent(city)}`);
                 const data = await response.json();
 
                 if (data.error) {

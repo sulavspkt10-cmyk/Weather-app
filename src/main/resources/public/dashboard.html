@@ -118,19 +118,19 @@
     </div>
 
     <script>
-        // Add User
         document.getElementById('addUserForm')
             .addEventListener('submit', async function(e) {
                 e.preventDefault();
 
-                const name = document.getElementById('userName').value;
-                const city = document.getElementById('userCity').value;
-                const address = document.getElementById('userAddress').value;
+                const name = document.getElementById('userName').value.trim();
+                const city = document.getElementById('userCity').value.trim();
+                const address = document.getElementById('userAddress').value.trim();
 
-                const response = await fetch(
-                    `/api/save-user?name=${name}&city=${city}&address=${address}`,
-                    { method: 'POST' }
-                );
+                const response = await fetch('/api/save-user', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, city, address })
+                });
                 const data = await response.json();
 
                 if (data.success) {
@@ -144,9 +144,8 @@
                     document.getElementById('errorMsg').style.display = 'block';
                     document.getElementById('successMsg').style.display = 'none';
                 }
-        });
+            });
 
-        // Get Weather
         async function getWeather() {
             const city = document.getElementById('weatherCity').value.trim();
             if (!city) {
@@ -157,7 +156,7 @@
             document.getElementById('weatherResult').style.display = 'none';
             document.getElementById('weatherError').style.display = 'none';
 
-            const response = await fetch(`/weather?city=${city}`);
+            const response = await fetch(`/weather?city=${encodeURIComponent(city)}`);
             const data = await response.json();
 
             if (data.error) {
