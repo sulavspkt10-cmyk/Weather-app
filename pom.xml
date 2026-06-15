@@ -30,18 +30,11 @@
             <version>4.9.0</version>
         </dependency>
 
-        <!-- Gson - JSON conversion -->
+        <!-- Gson - JSON -->
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
             <version>2.10.1</version>
-        </dependency>
-
-        <!-- Unirest - HTTP calls for Weather API -->
-        <dependency>
-            <groupId>com.konghq</groupId>
-            <artifactId>unirest-java</artifactId>
-            <version>3.14.2</version>
         </dependency>
 
         <!-- BCrypt - Password hashing -->
@@ -58,7 +51,7 @@
             <version>2.0.9</version>
         </dependency>
 
-                <!-- JUnit - Testing -->
+        <!-- JUnit - Testing -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
@@ -70,6 +63,7 @@
 
     <build>
         <plugins>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -79,6 +73,52 @@
                     <target>17</target>
                 </configuration>
             </plugin>
+
+            <!--
+              Builds the React frontend automatically when you run `mvn package`.
+              Installs Node.js locally (no global install needed), runs npm install,
+              then npm run build — output lands in src/main/resources/public/
+              and gets bundled into the JAR as static files.
+            -->
+            <plugin>
+                <groupId>com.github.eirslett</groupId>
+                <artifactId>frontend-maven-plugin</artifactId>
+                <version>1.15.0</version>
+                <configuration>
+                    <workingDirectory>frontend</workingDirectory>
+                    <nodeVersion>v20.14.0</nodeVersion>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>install-node-and-npm</id>
+                        <goals>
+                            <goal>install-node-and-npm</goal>
+                        </goals>
+                        <phase>generate-resources</phase>
+                    </execution>
+                    <execution>
+                        <id>npm-install</id>
+                        <goals>
+                            <goal>npm</goal>
+                        </goals>
+                        <phase>generate-resources</phase>
+                        <configuration>
+                            <arguments>install</arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>npm-build</id>
+                        <goals>
+                            <goal>npm</goal>
+                        </goals>
+                        <phase>generate-resources</phase>
+                        <configuration>
+                            <arguments>run build</arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
         </plugins>
     </build>
 

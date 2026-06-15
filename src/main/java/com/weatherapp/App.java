@@ -21,7 +21,7 @@ import static spark.Spark.staticFiles;
 
 public class App {
 
-    private static final int SESSION_MAX_AGE = 3600; // seconds
+    private static final int SESSION_MAX_AGE = 3600;
 
     public static void main(String[] args) {
 
@@ -33,54 +33,49 @@ public class App {
         WeatherService weatherService = new WeatherService();
         Gson gson = new Gson();
 
-        // Security headers on every response
         before((req, res) -> {
             res.header("X-Frame-Options", "DENY");
             res.header("X-Content-Type-Options", "nosniff");
             res.header("X-XSS-Protection", "1; mode=block");
             res.header("Referrer-Policy", "strict-origin-when-cross-origin");
             res.header("Content-Security-Policy",
-                    "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'");
+                    "default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com");
         });
 
         // ==========================================
-        // PUBLIC ROUTES
+        // PUBLIC API
         // ==========================================
-
-        get("/", (req, res) -> {
-            res.redirect("/index.html");
-            return null;
-        });
-
-        get("/login", (req, res) -> {
-            res.redirect("/login.html");
-            return null;
-        });
 
         post("/login", (req, res) -> {
-            String email = req.queryParams("email");
+            res.type("application/json");
+            String email    = req.queryParams("email");
             String password = req.queryParams("password");
 
             if (email == null || password == null
                     || email.trim().isEmpty() || password.isEmpty()) {
-                res.redirect("/login?error=invalid");
-                return null;
+                res.status(400);
+                return "{\"success\": false, \"error\": \"Invalid input\"}";
             }
 
             String sessionToken = authService.loginAdmin(
                     email.trim().toLowerCase(), password);
 
             if (sessionToken != null) {
-                // HttpOnly + SameSite=Strict prevents JS access and CSRF
                 res.header("Set-Cookie",
                         "sessionToken=" + sessionToken
                         + "; Path=/; HttpOnly; SameSite=Strict; Max-Age="
                         + SESSION_MAX_AGE);
-                res.redirect("/dashboard");
-            } else {
-                res.redirect("/login?error=invalid");
+                return "{\"success\": true}";
             }
-            return null;
+            res.status(401);
+            return "{\"success\": false, \"error\": \"Invalid credentials\"}";
+        });
+
+        get("/api/auth/status", (req, res) -> {
+            res.type("application/json");
+            String token = req.cookie("sessionToken");
+            boolean ok = authService.isLoggedIn(token);
+            return "{\"authenticated\": " + ok + "}";
         });
 
         get("/weather", (req, res) -> {
@@ -100,19 +95,17 @@ public class App {
         });
 
         // ==========================================
-        // PROTECTED ROUTES (Admin only)
+        // PROTECTED API (Admin only)
         // ==========================================
 
-        get("/dashboard", (req, res) -> {
-            AuthMiddleware.checkAuth(req, res);
-            res.redirect("/dashboard.html");
-            return null;
-        });
-
-        get("/users", (req, res) -> {
-            AuthMiddleware.checkAuth(req, res);
-            res.redirect("/users.html");
-            return null;
+        post("/logout", (req, res) -> {
+            res.type("application/json");
+            String sessionToken = req.cookie("sessionToken");
+            authService.logoutAdmin(sessionToken);
+            res.header("Set-Cookie",
+                    "sessionToken=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0;"
+                    + " Expires=Thu, 01 Jan 1970 00:00:00 GMT");
+            return "{\"success\": true}";
         });
 
         get("/api/users", (req, res) -> {
@@ -122,34 +115,27 @@ public class App {
             return gson.toJson(users);
         });
 
-        // Accepts a JSON body: { "name": "...", "city": "...", "address": "..." }
         post("/api/save-user", (req, res) -> {
             AuthMiddleware.checkAuth(req, res);
             res.type("application/json");
-
             try {
-                JsonObject body = JsonParser.parseString(req.body())
-                        .getAsJsonObject();
+                JsonObject body = JsonParser.parseString(req.body()).getAsJsonObject();
                 String name    = body.has("name")    ? body.get("name").getAsString().trim()    : "";
                 String city    = body.has("city")    ? body.get("city").getAsString().trim()    : "";
                 String address = body.has("address") ? body.get("address").getAsString().trim() : "";
 
                 if (name.isEmpty() || name.length() > 100) {
-                    res.status(400);
-                    return "{\"error\": \"Invalid name\"}";
+                    res.status(400); return "{\"error\": \"Invalid name\"}";
                 }
                 if (city.isEmpty() || city.length() > 100) {
-                    res.status(400);
-                    return "{\"error\": \"Invalid city\"}";
+                    res.status(400); return "{\"error\": \"Invalid city\"}";
                 }
                 if (address.isEmpty() || address.length() > 200) {
-                    res.status(400);
-                    return "{\"error\": \"Invalid address\"}";
+                    res.status(400); return "{\"error\": \"Invalid address\"}";
                 }
 
                 boolean saved = userService.saveUser(name, city, address);
                 return saved ? "{\"success\": true}" : "{\"success\": false}";
-
             } catch (Exception e) {
                 res.status(400);
                 return "{\"error\": \"Invalid request body\"}";
@@ -168,18 +154,7 @@ public class App {
             return deleted ? "{\"success\": true}" : "{\"success\": false}";
         });
 
-        post("/logout", (req, res) -> {
-            String sessionToken = req.cookie("sessionToken");
-            authService.logoutAdmin(sessionToken);
-            // Expire the cookie immediately
-            res.header("Set-Cookie",
-                    "sessionToken=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0;"
-                    + " Expires=Thu, 01 Jan 1970 00:00:00 GMT");
-            res.redirect("/login");
-            return null;
-        });
-
-        // One-time setup — disabled after the first admin is registered.
+        // One-time bootstrap — locked after the first admin exists.
         post("/setup", (req, res) -> {
             res.type("application/json");
             if (authService.getAdminCount() > 0) {
@@ -200,6 +175,21 @@ public class App {
             boolean registered = authService.registerAdmin(
                     name.trim(), email.trim().toLowerCase(), password);
             return registered ? "{\"success\": true}" : "{\"success\": false}";
+        });
+
+        // ==========================================
+        // SPA catch-all — must be last
+        // ==========================================
+        // Serve index.html for any route the React app handles client-side.
+        // Static files (JS/CSS bundles) are served by Spark before this fires.
+        get("/*", (req, res) -> {
+            String path = req.pathInfo();
+            if (!path.startsWith("/api") && !path.startsWith("/weather")
+                    && !path.startsWith("/login") && !path.startsWith("/logout")
+                    && !path.startsWith("/setup")) {
+                res.redirect("/index.html");
+            }
+            return null;
         });
 
         System.out.println("Server started at http://localhost:4567");

@@ -1,0 +1,60 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg:            #0f1117;
+  --surface:       #1a1d27;
+  --surface-hover: #1f2335;
+  --border:        #2a2d3e;
+  --border-light:  #363a52;
+
+  --primary:       #3b82f6;
+  --primary-hover: #2563eb;
+  --primary-dim:   rgba(59, 130, 246, 0.12);
+
+  --text:          #e2e8f0;
+  --text-muted:    #8892a4;
+  --text-subtle:   #55607a;
+
+  --success:       #22c55e;
+  --success-dim:   rgba(34, 197, 94, 0.12);
+  --error:         #ef4444;
+  --error-dim:     rgba(239, 68, 68, 0.12);
+
+  --radius:        8px;
+  --radius-lg:     12px;
+  --shadow:        0 1px 3px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  outline: none;
+}
+
+input {
+  font-family: inherit;
+  outline: none;
+}
