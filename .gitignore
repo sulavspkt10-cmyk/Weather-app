@@ -1,10 +1,14 @@
 # Build output
 target/
 
-# Sensitive config (credentials & API keys)
+# Sensitive config — copy config.properties.example → config.properties and fill in real values
 src/main/resources/config.properties
 
 # IDE config
 .vscode/
 .idea/
 *.iml
+
+# OS artifacts
+.DS_Store
+Thumbs.db

@@ -9,7 +9,7 @@
 <body>
 
     <nav class="navbar">
-        <h1>🌤️ Weather App</h1>
+        <h1>Weather App</h1>
         <div class="nav-links">
             <a href="/dashboard">Dashboard</a>
             <a href="/users">Users</a>
@@ -22,7 +22,7 @@
     <div class="container">
 
         <div class="welcome-card">
-            <h2>Welcome, Admin! 👋</h2>
+            <h2>Welcome, Admin!</h2>
             <p>Manage users and check weather from here</p>
         </div>
 
@@ -30,7 +30,7 @@
 
             <!-- Add New User Card -->
             <div class="card">
-                <h3>➕ Add New User</h3>
+                <h3>Add New User</h3>
                 <p class="card-subtitle">Save a user to the database</p>
 
                 <form id="addUserForm">
@@ -40,6 +40,7 @@
                             type="text"
                             id="userName"
                             placeholder="Enter full name"
+                            maxlength="100"
                             required
                         />
                     </div>
@@ -49,6 +50,7 @@
                             type="text"
                             id="userCity"
                             placeholder="Enter city"
+                            maxlength="100"
                             required
                         />
                     </div>
@@ -58,6 +60,7 @@
                             type="text"
                             id="userAddress"
                             placeholder="Enter address"
+                            maxlength="200"
                             required
                         />
                     </div>
@@ -65,16 +68,16 @@
                 </form>
 
                 <div class="success-msg" id="successMsg">
-                    ✅ User saved successfully!
+                    User saved successfully!
                 </div>
                 <div class="error-msg" id="errorMsg">
-                    ❌ Failed to save user!
+                    Failed to save user!
                 </div>
             </div>
 
             <!-- Weather Search Card -->
             <div class="card">
-                <h3>🌤️ Check Weather</h3>
+                <h3>Check Weather</h3>
                 <p class="card-subtitle">Get weather for any city</p>
 
                 <div class="form-group">
@@ -83,6 +86,7 @@
                         type="text"
                         id="weatherCity"
                         placeholder="Enter city name"
+                        maxlength="100"
                     />
                 </div>
                 <button onclick="getWeather()" class="submit-btn">
@@ -91,25 +95,25 @@
 
                 <div class="weather-result" id="weatherResult">
                     <div class="weather-stat">
-                        <span>🌡️ Temperature</span>
+                        <span>Temperature</span>
                         <strong id="temp"></strong>
                     </div>
                     <div class="weather-stat">
-                        <span>🤔 Feels Like</span>
+                        <span>Feels Like</span>
                         <strong id="feelsLike"></strong>
                     </div>
                     <div class="weather-stat">
-                        <span>💧 Humidity</span>
+                        <span>Humidity</span>
                         <strong id="humidity"></strong>
                     </div>
                     <div class="weather-stat">
-                        <span>☁️ Description</span>
+                        <span>Description</span>
                         <strong id="description"></strong>
                     </div>
                 </div>
 
                 <div class="error-msg" id="weatherError">
-                    ❌ City not found!
+                    City not found!
                 </div>
             </div>
 
@@ -118,19 +122,19 @@
     </div>
 
     <script>
-        // Add User
         document.getElementById('addUserForm')
             .addEventListener('submit', async function(e) {
                 e.preventDefault();
 
-                const name = document.getElementById('userName').value;
-                const city = document.getElementById('userCity').value;
-                const address = document.getElementById('userAddress').value;
+                const name = document.getElementById('userName').value.trim();
+                const city = document.getElementById('userCity').value.trim();
+                const address = document.getElementById('userAddress').value.trim();
 
-                const response = await fetch(
-                    `/api/save-user?name=${name}&city=${city}&address=${address}`,
-                    { method: 'POST' }
-                );
+                const response = await fetch('/api/save-user', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, city, address })
+                });
                 const data = await response.json();
 
                 if (data.success) {
@@ -144,9 +148,8 @@
                     document.getElementById('errorMsg').style.display = 'block';
                     document.getElementById('successMsg').style.display = 'none';
                 }
-        });
+            });
 
-        // Get Weather
         async function getWeather() {
             const city = document.getElementById('weatherCity').value.trim();
             if (!city) {
@@ -157,7 +160,7 @@
             document.getElementById('weatherResult').style.display = 'none';
             document.getElementById('weatherError').style.display = 'none';
 
-            const response = await fetch(`/weather?city=${city}`);
+            const response = await fetch(`/weather?city=${encodeURIComponent(city)}`);
             const data = await response.json();
 
             if (data.error) {
